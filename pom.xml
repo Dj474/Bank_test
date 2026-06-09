@@ -6,12 +6,14 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version> <relativePath/> </parent>
+        <version>3.2.5</version>
+        <relativePath/>
+    </parent>
 
-    <groupId>com.bank</groupId>
-    <artifactId>card-management-system</artifactId>
+    <groupId>com.example</groupId>
+    <artifactId>bankcards</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>card-management-system</name>
+    <name>bank-cards</name>
     <description>Backend для системы управления банковскими картами</description>
 
     <properties>
@@ -108,6 +110,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>com.example.bankcards.BankCardsApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
