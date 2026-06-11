@@ -3,16 +3,18 @@ package com.example.bankcards.service.user;
 import com.example.bankcards.dto.user.UserDtoIn;
 import com.example.bankcards.dto.user.UserDtoOut;
 import com.example.bankcards.entity.user.User;
+import com.example.bankcards.exception.BadRequestException;
+import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.user.UserRepository;
 import com.example.bankcards.util.enums.user.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -38,27 +40,28 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserDtoOut getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         return mapToDtoOut(user);
     }
 
     @Transactional
     public UserDtoOut createUser(UserDtoIn dtoIn) {
         if (userRepository.existsByUsername(dtoIn.getUsername())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
+            throw new BadRequestException("Username already exists");
         }
 
         Role userRole;
         try {
             userRole = Role.valueOf(dtoIn.getRole().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid role. Use USER or ADMIN");
+            throw new BadRequestException("Invalid role. Use USER or ADMIN");
         }
 
         User user = User.builder()
                 .username(dtoIn.getUsername())
                 .password(passwordEncoder.encode(dtoIn.getPassword()))
                 .role(userRole)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         return mapToDtoOut(userRepository.save(user));
@@ -67,7 +70,7 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            throw new NotFoundException("User not found");
         }
         userRepository.deleteById(id);
     }

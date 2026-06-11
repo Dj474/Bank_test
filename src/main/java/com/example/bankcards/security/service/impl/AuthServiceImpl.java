@@ -20,9 +20,8 @@ import com.example.bankcards.dto.security.JwtDtoOut;
 import com.example.bankcards.dto.security.JwtRefreshDtoIn;
 import com.example.bankcards.dto.security.JwtRefreshDtoOut;
 
-import org.springframework.http.HttpStatus;
-
 import java.awt.*;
+import java.time.LocalDateTime;
 
 
 @Service
@@ -51,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(userDtoIn.getUsername())
                 .password(passwordEncoder.encode(userDtoIn.getPassword()))
                 .role(Role.USER)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
