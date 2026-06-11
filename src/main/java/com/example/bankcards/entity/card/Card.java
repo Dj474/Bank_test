@@ -1,6 +1,7 @@
 package com.example.bankcards.entity.card;
 
 import com.example.bankcards.entity.user.User;
+import com.example.bankcards.util.converter.card.CardNumberConverter;
 import com.example.bankcards.util.enums.card.CardStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,6 +23,7 @@ public class Card {
     private Long id;
 
     @Column(name = "card_number", nullable = false)
+    @Convert(converter = CardNumberConverter.class)
     private String cardNumber;
 
     @Column(name = "card_holder", nullable = false, length = 100)
@@ -43,5 +45,13 @@ public class Card {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public String getMaskedCardNumber() {
+        if (this.cardNumber == null || this.cardNumber.length() < 4) {
+            return "**** **** **** ****";
+        }
+        String lastFourDigits = this.cardNumber.substring(this.cardNumber.length() - 4);
+        return "**** **** **** " + lastFourDigits;
+    }
 
 }
