@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class CardService {
@@ -38,14 +40,19 @@ public class CardService {
 
     @Transactional
     public CardDtoOut createCard(CardDtoIn dtoIn) {
+        if (cardRepository.existsByCardNumber(dtoIn.getCardNumber())) {
+            throw new BadRequestException("Card with this number already exists");
+        }
+
         User user = userRepository.byId(dtoIn.getUserId());
 
         Card card = Card.builder()
                 .cardNumber(dtoIn.getCardNumber())
                 .cardHolder(dtoIn.getCardHolder().toUpperCase())
                 .expirationDate(dtoIn.getExpirationDate())
-                .balance(dtoIn.getBalance())
+                .balance(dtoIn.getBalance() != null ? dtoIn.getBalance() : java.math.BigDecimal.ZERO)
                 .status(CardStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
                 .user(user)
                 .build();
 

@@ -18,5 +18,6 @@ public interface CardRepository extends JpaRepository<Card, Long> {
         return findById(id).orElseThrow(() -> new NotFoundException("Card not found"));
     }
 
+    boolean existsByCardNumber(String cardNumber);
 
 }
