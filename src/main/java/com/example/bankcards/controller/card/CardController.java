@@ -1,5 +1,6 @@
 package com.example.bankcards.controller.card;
 
+import com.example.bankcards.dto.card.BlockRequestDtoOut;
 import com.example.bankcards.dto.card.CardDtoIn;
 import com.example.bankcards.dto.card.CardDtoOut;
 import com.example.bankcards.dto.card.TransferDtoIn;
@@ -32,14 +33,6 @@ public class CardController {
             @RequestAttribute("userId") Long userId,
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         return cardService.getMyCards(userId, pageable);
-    }
-
-    @PatchMapping("/my/{id}/block")
-    @Operation(summary = "Запросить блокировку своей карты")
-    public CardDtoOut blockMyCard(
-            @PathVariable Long id,
-            @RequestAttribute("userId") Long userId) {
-        return cardService.requestBlockCard(id, userId);
     }
 
     @PostMapping("/my/transfer")
@@ -83,4 +76,39 @@ public class CardController {
     public void deleteCard(@PathVariable Long id) {
         cardService.deleteCardByAdmin(id);
     }
+
+    @PostMapping("/my/{id}/block")
+    @Operation(summary = "Оставить заявку на блокировку карты сотрудником банка")
+    public BlockRequestDtoOut requestBlockCard(
+            @PathVariable Long id,
+            @RequestAttribute("userId") Long userId,
+            @RequestParam(required = false, defaultValue = "Not specified") String reason) {
+        return cardService.createBlockRequest(id, userId, reason);
+    }
+
+    @GetMapping("/block-requests")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "[ADMIN] Посмотреть список всех ожидающих заявок на блокировку")
+    public Page<BlockRequestDtoOut> getPendingRequests(
+            @PageableDefault(size = 10) Pageable pageable) {
+        return cardService.getAllPendingRequests(pageable);
+    }
+
+    @PatchMapping("/block-requests/{requestId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "[ADMIN] Одобрить (approve=true) или отклонить (approve=false) заявку на блокировку")
+    public BlockRequestDtoOut processRequest(
+            @PathVariable Long requestId,
+            @RequestParam boolean approve) {
+        return cardService.processBlockRequest(requestId, approve);
+    }
+
+    @GetMapping("/my/block-requests")
+    @Operation(summary = "Просмотреть историю своих заявок на блокировку карт (с пагинацией)")
+    public Page<BlockRequestDtoOut> getMyBlockRequests(
+            @RequestAttribute("userId") Long userId,
+            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
+        return cardService.getMyBlockRequests(userId, pageable);
+    }
+
 }

@@ -1,20 +1,26 @@
 package com.example.bankcards.service.card;
 
+import com.example.bankcards.dto.card.BlockRequestDtoOut;
 import com.example.bankcards.dto.card.CardDtoIn;
 import com.example.bankcards.dto.card.CardDtoOut;
 import com.example.bankcards.dto.card.TransferDtoIn;
+import com.example.bankcards.entity.card.BlockRequest;
 import com.example.bankcards.entity.card.Card;
 import com.example.bankcards.entity.user.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.repository.card.BlockRequestRepository;
 import com.example.bankcards.repository.card.CardRepository;
 import com.example.bankcards.repository.user.UserRepository;
+import com.example.bankcards.util.enums.card.BlockRequestStatus;
 import com.example.bankcards.util.enums.card.CardStatus;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Not;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +30,7 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final UserRepository userRepository;
+    private final BlockRequestRepository blockRequestRepository;
 
     private CardDtoOut mapToDtoOut(Card card) {
         CardDtoOut dto = new CardDtoOut();
@@ -85,15 +92,6 @@ public class CardService {
     }
 
     @Transactional
-    public CardDtoOut requestBlockCard(Long id, Long userId) {
-        Card card = cardRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new NotFoundException("Card not found or doesn't belong to you"));
-
-        card.setStatus(CardStatus.BLOCKED);
-        return mapToDtoOut(cardRepository.save(card));
-    }
-
-    @Transactional
     public void transferBetweenOwnCards(Long userId, TransferDtoIn transferDto) {
         Card fromCard = cardRepository.findByIdAndUserId(transferDto.getFromCardId(), userId)
                 .orElseThrow(() -> new NotFoundException("Source card not found"));
@@ -119,4 +117,77 @@ public class CardService {
         cardRepository.save(fromCard);
         cardRepository.save(toCard);
     }
+
+    @Transactional
+    public BlockRequestDtoOut createBlockRequest(Long cardId, Long userId, String reason) {
+        Card card = cardRepository.findByIdAndUserId(cardId, userId)
+                .orElseThrow(() -> new NotFoundException("Card not found"));
+
+        if (card.getStatus() == CardStatus.BLOCKED) {
+            throw new BadRequestException("Card is already blocked");
+        }
+
+        if (blockRequestRepository.existsByCardIdAndStatus(cardId, BlockRequestStatus.PENDING)) {
+            throw new BadRequestException("A block request for this card is already pending review");
+        }
+
+        BlockRequest request = BlockRequest.builder()
+                .card(card)
+                .user(card.getUser())
+                .status(BlockRequestStatus.PENDING)
+                .reason(reason)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return mapToBlockRequestDto(blockRequestRepository.save(request));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BlockRequestDtoOut> getAllPendingRequests(Pageable pageable) {
+        return blockRequestRepository.findByStatus(BlockRequestStatus.PENDING, pageable)
+                .map(this::mapToBlockRequestDto);
+    }
+
+    @Transactional
+    public BlockRequestDtoOut processBlockRequest(Long requestId, boolean approve) {
+        BlockRequest request = blockRequestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Request not found"));
+
+        if (request.getStatus() != BlockRequestStatus.PENDING) {
+            throw new BadRequestException("Request is already processed");
+        }
+
+        if (approve) {
+            request.setStatus(BlockRequestStatus.APPROVED);
+            Card card = request.getCard();
+            card.setStatus(CardStatus.BLOCKED);
+            cardRepository.save(card);
+        } else {
+            request.setStatus(BlockRequestStatus.REJECTED);
+        }
+
+        request.setProcessedAt(LocalDateTime.now());
+        return mapToBlockRequestDto(blockRequestRepository.save(request));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BlockRequestDtoOut> getMyBlockRequests(Long userId, Pageable pageable) {
+        return blockRequestRepository.findByUserId(userId, pageable)
+                .map(this::mapToBlockRequestDto);
+    }
+
+    private BlockRequestDtoOut mapToBlockRequestDto(BlockRequest req) {
+        BlockRequestDtoOut dto = new BlockRequestDtoOut();
+        dto.setId(req.getId());
+        dto.setCardId(req.getCard().getId());
+        dto.setMaskedCardNumber(req.getCard().getMaskedCardNumber());
+        dto.setUserId(req.getUser().getId());
+        dto.setUsername(req.getUser().getUsername());
+        dto.setStatus(req.getStatus().name());
+        dto.setReason(req.getReason());
+        dto.setCreatedAt(req.getCreatedAt());
+        dto.setProcessedAt(req.getProcessedAt());
+        return dto;
+    }
+
 }
