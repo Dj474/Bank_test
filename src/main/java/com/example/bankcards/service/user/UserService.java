@@ -5,6 +5,7 @@ import com.example.bankcards.dto.user.UserDtoOut;
 import com.example.bankcards.entity.user.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.mapper.user.UserMapper;
 import com.example.bankcards.repository.user.UserRepository;
 import com.example.bankcards.util.enums.user.Role;
 import lombok.RequiredArgsConstructor;
@@ -22,26 +23,18 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    private UserDtoOut mapToDtoOut(User user) {
-        UserDtoOut dto = new UserDtoOut();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setRole(user.getRole().name());
-        dto.setCreatedAt(user.getCreatedAt());
-        return dto;
-    }
+    private final UserMapper userMapper;
 
     @Transactional(readOnly = true)
     public Page<UserDtoOut> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable).map(this::mapToDtoOut);
+        return userRepository.findAll(pageable).map(userMapper::toDtoOut);
     }
 
     @Transactional(readOnly = true)
     public UserDtoOut getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        return mapToDtoOut(user);
+        return userMapper.toDtoOut(user);
     }
 
     @Transactional
@@ -64,7 +57,7 @@ public class UserService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return mapToDtoOut(userRepository.save(user));
+        return userMapper.toDtoOut(userRepository.save(user));
     }
 
     @Transactional

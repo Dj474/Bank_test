@@ -9,18 +9,17 @@ import com.example.bankcards.entity.card.Card;
 import com.example.bankcards.entity.user.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.mapper.card.CardMapper;
 import com.example.bankcards.repository.card.BlockRequestRepository;
 import com.example.bankcards.repository.card.CardRepository;
 import com.example.bankcards.repository.user.UserRepository;
 import com.example.bankcards.util.enums.card.BlockRequestStatus;
 import com.example.bankcards.util.enums.card.CardStatus;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.ast.Not;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -31,19 +30,7 @@ public class CardService {
     private final CardRepository cardRepository;
     private final UserRepository userRepository;
     private final BlockRequestRepository blockRequestRepository;
-
-    private CardDtoOut mapToDtoOut(Card card) {
-        CardDtoOut dto = new CardDtoOut();
-        dto.setId(card.getId());
-        dto.setCardNumber(card.getMaskedCardNumber());
-        dto.setCardHolder(card.getCardHolder());
-        dto.setExpirationDate(card.getExpirationDate());
-        dto.setStatus(card.getStatus().name());
-        dto.setBalance(card.getBalance());
-        dto.setUserId(card.getUser().getId());
-        dto.setCreatedAt(card.getCreatedAt());
-        return dto;
-    }
+    private final CardMapper cardMapper;
 
     @Transactional
     public CardDtoOut createCard(CardDtoIn dtoIn) {
@@ -53,29 +40,21 @@ public class CardService {
 
         User user = userRepository.byId(dtoIn.getUserId());
 
-        Card card = Card.builder()
-                .cardNumber(dtoIn.getCardNumber())
-                .cardHolder(dtoIn.getCardHolder().toUpperCase())
-                .expirationDate(dtoIn.getExpirationDate())
-                .balance(dtoIn.getBalance() != null ? dtoIn.getBalance() : java.math.BigDecimal.ZERO)
-                .status(CardStatus.ACTIVE)
-                .createdAt(LocalDateTime.now())
-                .user(user)
-                .build();
+        Card card = cardMapper.toEntity(dtoIn, user);
 
-        return mapToDtoOut(cardRepository.save(card));
+        return cardMapper.toDtoOut(cardRepository.save(card));
     }
 
     @Transactional(readOnly = true)
     public Page<CardDtoOut> getAllCardsForAdmin(Pageable pageable) {
-        return cardRepository.findAll(pageable).map(this::mapToDtoOut);
+        return cardRepository.findAll(pageable).map(cardMapper::toDtoOut);
     }
 
     @Transactional
     public CardDtoOut updateStatusByAdmin(Long id, CardStatus newStatus) {
         Card card = cardRepository.byId(id);
         card.setStatus(newStatus);
-        return mapToDtoOut(cardRepository.save(card));
+        return cardMapper.toDtoOut(cardRepository.save(card));
     }
 
     @Transactional
@@ -88,7 +67,7 @@ public class CardService {
 
     @Transactional(readOnly = true)
     public Page<CardDtoOut> getMyCards(Long userId, Pageable pageable) {
-        return cardRepository.findByUserId(userId, pageable).map(this::mapToDtoOut);
+        return cardRepository.findByUserId(userId, pageable).map(cardMapper::toDtoOut);
     }
 
     @Transactional
@@ -131,21 +110,15 @@ public class CardService {
             throw new BadRequestException("A block request for this card is already pending review");
         }
 
-        BlockRequest request = BlockRequest.builder()
-                .card(card)
-                .user(card.getUser())
-                .status(BlockRequestStatus.PENDING)
-                .reason(reason)
-                .createdAt(LocalDateTime.now())
-                .build();
+        BlockRequest request = cardMapper.toBlockRequestEntity(card, reason);
 
-        return mapToBlockRequestDto(blockRequestRepository.save(request));
+        return cardMapper.toBlockRequestDtoOut(blockRequestRepository.save(request));
     }
 
     @Transactional(readOnly = true)
     public Page<BlockRequestDtoOut> getAllPendingRequests(Pageable pageable) {
         return blockRequestRepository.findByStatus(BlockRequestStatus.PENDING, pageable)
-                .map(this::mapToBlockRequestDto);
+                .map(cardMapper::toBlockRequestDtoOut);
     }
 
     @Transactional
@@ -167,27 +140,13 @@ public class CardService {
         }
 
         request.setProcessedAt(LocalDateTime.now());
-        return mapToBlockRequestDto(blockRequestRepository.save(request));
+        return cardMapper.toBlockRequestDtoOut(blockRequestRepository.save(request));
     }
 
     @Transactional(readOnly = true)
     public Page<BlockRequestDtoOut> getMyBlockRequests(Long userId, Pageable pageable) {
         return blockRequestRepository.findByUserId(userId, pageable)
-                .map(this::mapToBlockRequestDto);
-    }
-
-    private BlockRequestDtoOut mapToBlockRequestDto(BlockRequest req) {
-        BlockRequestDtoOut dto = new BlockRequestDtoOut();
-        dto.setId(req.getId());
-        dto.setCardId(req.getCard().getId());
-        dto.setMaskedCardNumber(req.getCard().getMaskedCardNumber());
-        dto.setUserId(req.getUser().getId());
-        dto.setUsername(req.getUser().getUsername());
-        dto.setStatus(req.getStatus().name());
-        dto.setReason(req.getReason());
-        dto.setCreatedAt(req.getCreatedAt());
-        dto.setProcessedAt(req.getProcessedAt());
-        return dto;
+                .map(cardMapper::toBlockRequestDtoOut);
     }
 
 }
