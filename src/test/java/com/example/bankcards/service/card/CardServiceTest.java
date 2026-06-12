@@ -1,4 +1,4 @@
-package com.example.bankcards.service;
+package com.example.bankcards.service.card;
 
 import com.example.bankcards.dto.card.BlockRequestDtoOut;
 import com.example.bankcards.dto.card.CardDtoIn;
@@ -12,7 +12,6 @@ import com.example.bankcards.mapper.card.CardMapper;
 import com.example.bankcards.repository.card.BlockRequestRepository;
 import com.example.bankcards.repository.card.CardRepository;
 import com.example.bankcards.repository.user.UserRepository;
-import com.example.bankcards.service.card.CardService;
 import com.example.bankcards.util.enums.card.BlockRequestStatus;
 import com.example.bankcards.util.enums.card.CardStatus;
 import org.junit.jupiter.api.BeforeEach;

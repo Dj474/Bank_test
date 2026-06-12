@@ -1,11 +1,10 @@
-package com.example.bankcards.service;
+package com.example.bankcards.service.user;
 
 import com.example.bankcards.dto.user.UserDtoIn;
 import com.example.bankcards.dto.user.UserDtoOut;
 import com.example.bankcards.entity.user.User;
 import com.example.bankcards.mapper.user.UserMapper;
 import com.example.bankcards.repository.user.UserRepository;
-import com.example.bankcards.service.user.UserService;
 import com.example.bankcards.util.enums.user.Role;
 import com.example.bankcards.exception.BadRequestException; // Напиши сюда свой правильный импорт исключения
 import org.junit.jupiter.api.BeforeEach;
