@@ -4,6 +4,7 @@ import com.example.bankcards.dto.error.ErrorDtoOut;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,6 +39,19 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(errorDtoOut, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorDtoOut> handleAccessDeniedException(AccessDeniedException ex) {
+        log.error("Access Denied exception: {}", ex.getMessage());
+
+        ErrorDtoOut errorDtoOut = new ErrorDtoOut(
+                HttpStatus.FORBIDDEN.value(),
+                "403 FORBIDDEN",
+                "Access Denied",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorDtoOut, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
