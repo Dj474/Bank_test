@@ -5,8 +5,10 @@ import com.example.bankcards.dto.security.JwtDtoOut;
 import com.example.bankcards.dto.security.JwtRefreshDtoIn;
 import com.example.bankcards.dto.security.JwtRefreshDtoOut;
 import com.example.bankcards.security.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,17 +20,17 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public JwtDtoOut register(AuthenticationDtoIn userDtoIn) {
+    public JwtDtoOut register(@Valid @RequestBody AuthenticationDtoIn userDtoIn) {
         return authService.register(userDtoIn);
     }
 
     @PostMapping("/signin")
-    public JwtDtoOut login(AuthenticationDtoIn userDtoIn) {
+    public JwtDtoOut login(@Valid @RequestBody AuthenticationDtoIn userDtoIn) {
         return authService.login(userDtoIn);
     }
 
     @PostMapping("/refresh")
-    public JwtRefreshDtoOut refreshToken(JwtRefreshDtoIn refreshDtoIn) {
+    public JwtRefreshDtoOut refreshToken(@Valid @RequestBody JwtRefreshDtoIn refreshDtoIn) {
         return authService.refreshToken(refreshDtoIn);
     }
 
