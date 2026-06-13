@@ -1,1 +1,692 @@
-# Здесь будет OpenAPI описание всех доступных эндпоинтов и моделей данных.
+openapi: 3.0.1
+info:
+  title: Bank Cards API
+  description: Bank card management service
+  version: 1.0.0
+servers:
+- url: http://localhost
+  description: Generated server url
+tags:
+- name: Card Management Controller
+  description: Bank card operations (ADMIN/USER rights separation)
+- name: Authentication
+  description: "Endpoints for registration, authorization, and JWT token renewal"
+- name: User Management Controller
+  description: User administration operations (Available to ADMIN only)
+paths:
+  /api/v1/users:
+    get:
+      tags:
+      - User Management Controller
+      summary: Get a list of all users (with pagination)
+      operationId: getAllUsers
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageUserDtoOut'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - User Management Controller
+      summary: Create a new user with any role (ADMIN/USER)
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDtoIn'
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/UserDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/cards:
+    get:
+      tags:
+      - Card Management Controller
+      summary: "[ADMIN] View all cards in the system"
+      operationId: getAllCardsForAdmin
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageCardDtoOut'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Card Management Controller
+      summary: "[ADMIN] Create a new card for the user"
+      operationId: createCard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardDtoIn'
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CardDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/cards/my/{id}/block:
+    post:
+      tags:
+      - Card Management Controller
+      summary: Create request to have a bank employee block the card
+      operationId: requestBlockCard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+          default: Not specified
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BlockRequestDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/cards/my/transfer:
+    post:
+      tags:
+      - Card Management Controller
+      summary: Transfer between your own cards
+      operationId: transferBetweenOwnCards
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferDtoIn'
+        required: true
+      responses:
+        "200":
+          description: OK
+      security:
+      - bearerAuth: []
+  /api/v1/auth/signin:
+    post:
+      tags:
+      - Authentication
+      summary: User Authorization (Log In)
+      description: Verifies user credentials and issues an active pair of access and
+        refresh tokens
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationDtoIn'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JwtDtoOut'
+  /api/v1/auth/register:
+    post:
+      tags:
+      - Authentication
+      summary: New user registration
+      description: Creates a new user account in the system and returns the initial
+        pair of JWT tokens
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationDtoIn'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JwtDtoOut'
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - Authentication
+      summary: JWT token renewal
+      description: Accepts a valid (non-expired) refresh token and returns a new access
+        token
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JwtRefreshDtoIn'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JwtRefreshDtoOut'
+  /api/v1/cards/{id}/status:
+    patch:
+      tags:
+      - Card Management Controller
+      summary: "[ADMIN] Change card status (ACTIVE, BLOCKED, EXPIRED)"
+      operationId: changeCardStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: status
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - BLOCKED
+          - EXPIRED
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CardDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/cards/block-requests/{requestId}:
+    patch:
+      tags:
+      - Card Management Controller
+      summary: "[ADMIN] Approve (approve=true) or reject (approve=false) the blocking\
+        \ request"
+      operationId: processRequest
+      parameters:
+      - name: requestId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: approve
+        in: query
+        required: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BlockRequestDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/users/{id}:
+    get:
+      tags:
+      - User Management Controller
+      summary: Get detailed user information by ID
+      operationId: getUserById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/UserDtoOut'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - User Management Controller
+      summary: Remove the user from the system
+      operationId: deleteUser
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+      security:
+      - bearerAuth: []
+  /api/v1/cards/my:
+    get:
+      tags:
+      - Card Management Controller
+      summary: Viewing your cards (Search + pagination)
+      operationId: getMyCards
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageCardDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/cards/my/block-requests:
+    get:
+      tags:
+      - Card Management Controller
+      summary: View the history of card blocking requests (with pagination)
+      operationId: getMyBlockRequests
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageBlockRequestDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/cards/block-requests:
+    get:
+      tags:
+      - Card Management Controller
+      summary: "[ADMIN] View list of all pending blocking requests"
+      operationId: getPendingRequests
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageBlockRequestDtoOut'
+      security:
+      - bearerAuth: []
+  /api/v1/cards/{id}:
+    delete:
+      tags:
+      - Card Management Controller
+      summary: "[ADMIN] Remove card from the system"
+      operationId: deleteCard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    UserDtoIn:
+      required:
+      - password
+      - role
+      - username
+      type: object
+      properties:
+        username:
+          maxLength: 50
+          minLength: 3
+          type: string
+        password:
+          maxLength: 100
+          minLength: 6
+          type: string
+        role:
+          type: string
+    UserDtoOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    CardDtoIn:
+      required:
+      - cardHolder
+      - cardNumber
+      - expirationDate
+      - userId
+      type: object
+      properties:
+        cardNumber:
+          pattern: "\\d{16}"
+          type: string
+        cardHolder:
+          type: string
+        expirationDate:
+          type: string
+          format: date
+        balance:
+          type: number
+        userId:
+          type: integer
+          format: int64
+    CardDtoOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cardNumber:
+          type: string
+        cardHolder:
+          type: string
+        expirationDate:
+          type: string
+          format: date
+        status:
+          type: string
+        balance:
+          type: number
+        userId:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+    BlockRequestDtoOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cardId:
+          type: integer
+          format: int64
+        maskedCardNumber:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        status:
+          type: string
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+    TransferDtoIn:
+      required:
+      - amount
+      - fromCardId
+      - toCardId
+      type: object
+      properties:
+        fromCardId:
+          type: integer
+          format: int64
+        toCardId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+    AuthenticationDtoIn:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    JwtDtoOut:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        id:
+          type: integer
+          format: int64
+    JwtRefreshDtoIn:
+      required:
+      - refreshToken
+      type: object
+      properties:
+        refreshToken:
+          type: string
+    JwtRefreshDtoOut:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+    Pageable:
+      type: object
+      properties:
+        page:
+          minimum: 0
+          type: integer
+          format: int32
+        size:
+          minimum: 1
+          type: integer
+          format: int32
+        sort:
+          type: array
+          items:
+            type: string
+    PageUserDtoOut:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserDtoOut'
+        number:
+          type: integer
+          format: int32
+        sort:
+          type: array
+          items:
+            $ref: '#/components/schemas/SortObject'
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        sort:
+          type: array
+          items:
+            $ref: '#/components/schemas/SortObject'
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+    SortObject:
+      type: object
+      properties:
+        direction:
+          type: string
+        nullHandling:
+          type: string
+        ascending:
+          type: boolean
+        property:
+          type: string
+        ignoreCase:
+          type: boolean
+    PageCardDtoOut:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDtoOut'
+        number:
+          type: integer
+          format: int32
+        sort:
+          type: array
+          items:
+            $ref: '#/components/schemas/SortObject'
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        empty:
+          type: boolean
+    PageBlockRequestDtoOut:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockRequestDtoOut'
+        number:
+          type: integer
+          format: int32
+        sort:
+          type: array
+          items:
+            $ref: '#/components/schemas/SortObject'
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        empty:
+          type: boolean
+  securitySchemes:
+    bearerAuth:
+      type: http
+      name: bearerAuth
+      scheme: bearer
+      bearerFormat: JWT

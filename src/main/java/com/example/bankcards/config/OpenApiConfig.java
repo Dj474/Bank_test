@@ -16,7 +16,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Bank Cards API")
                         .version("1.0.0")
-                        .description("Сервис управления банковскими картами"))
+                        .description("Bank card management service"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()
                                 .name("bearerAuth")

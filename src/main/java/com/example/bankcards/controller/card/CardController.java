@@ -21,14 +21,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/cards")
 @RequiredArgsConstructor
-@Tag(name = "Card Management Controller", description = "Операции с банковскими картами (Разделение прав ADMIN/USER)")
+@Tag(name = "Card Management Controller", description = "Bank card operations (ADMIN/USER rights separation)")
 @SecurityRequirement(name = "bearerAuth")
 public class CardController {
 
     private final CardService cardService;
 
     @GetMapping("/my")
-    @Operation(summary = "Просмотр своих карт (Поиск + пагинация)")
+    @Operation(summary = "Viewing your cards (Search + pagination)")
     public Page<CardDtoOut> getMyCards(
             @RequestAttribute("userId") Long userId,
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
@@ -37,7 +37,7 @@ public class CardController {
 
     @PostMapping("/my/transfer")
     @ResponseStatus(HttpStatus.OK)
-    @Operation(summary = "Перевод между своими картами")
+    @Operation(summary = "Transfer between your own cards")
     public void transferBetweenOwnCards(
             @RequestAttribute("userId") Long userId,
             @Valid @RequestBody TransferDtoIn transferDto) {
@@ -47,14 +47,14 @@ public class CardController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "[ADMIN] Создать новую карту для пользователя")
+    @Operation(summary = "[ADMIN] Create a new card for the user")
     public CardDtoOut createCard(@Valid @RequestBody CardDtoIn dtoIn) {
         return cardService.createCard(dtoIn);
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "[ADMIN] Просмотреть вообще все карты в системе")
+    @Operation(summary = "[ADMIN] View all cards in the system")
     public Page<CardDtoOut> getAllCardsForAdmin(
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         return cardService.getAllCardsForAdmin(pageable);
@@ -62,7 +62,7 @@ public class CardController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "[ADMIN] Изменить статус карты (ACTIVE, BLOCKED, EXPIRED)")
+    @Operation(summary = "[ADMIN] Change card status (ACTIVE, BLOCKED, EXPIRED)")
     public CardDtoOut changeCardStatus(
             @PathVariable Long id,
             @RequestParam CardStatus status) {
@@ -72,13 +72,13 @@ public class CardController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "[ADMIN] Удалить карту из системы")
+    @Operation(summary = "[ADMIN] Remove card from the system")
     public void deleteCard(@PathVariable Long id) {
         cardService.deleteCardByAdmin(id);
     }
 
     @PostMapping("/my/{id}/block")
-    @Operation(summary = "Оставить заявку на блокировку карты сотрудником банка")
+    @Operation(summary = "Create request to have a bank employee block the card")
     public BlockRequestDtoOut requestBlockCard(
             @PathVariable Long id,
             @RequestAttribute("userId") Long userId,
@@ -88,7 +88,7 @@ public class CardController {
 
     @GetMapping("/block-requests")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "[ADMIN] Посмотреть список всех ожидающих заявок на блокировку")
+    @Operation(summary = "[ADMIN] View list of all pending blocking requests")
     public Page<BlockRequestDtoOut> getPendingRequests(
             @PageableDefault(size = 10) Pageable pageable) {
         return cardService.getAllPendingRequests(pageable);
@@ -96,7 +96,7 @@ public class CardController {
 
     @PatchMapping("/block-requests/{requestId}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "[ADMIN] Одобрить (approve=true) или отклонить (approve=false) заявку на блокировку")
+    @Operation(summary = "[ADMIN] Approve (approve=true) or reject (approve=false) the blocking request")
     public BlockRequestDtoOut processRequest(
             @PathVariable Long requestId,
             @RequestParam boolean approve) {
@@ -104,7 +104,7 @@ public class CardController {
     }
 
     @GetMapping("/my/block-requests")
-    @Operation(summary = "Просмотреть историю своих заявок на блокировку карт (с пагинацией)")
+    @Operation(summary = "View the history of card blocking requests (with pagination)")
     public Page<BlockRequestDtoOut> getMyBlockRequests(
             @RequestAttribute("userId") Long userId,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
