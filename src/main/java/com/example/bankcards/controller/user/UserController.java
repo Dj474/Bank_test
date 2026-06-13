@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@Tag(name = "User Management Controller", description = "Операции администрирования пользователей (Доступно только ADMIN)")
+@Tag(name = "User Management Controller", description = "User administration operations (Available to ADMIN only)")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
@@ -27,27 +27,27 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Создать нового пользователя с любой ролью (ADMIN/USER)")
+    @Operation(summary = "Create a new user with any role (ADMIN/USER)")
     public UserDtoOut createUser(@Valid @RequestBody UserDtoIn dtoIn) {
         return userService.createUser(dtoIn);
     }
 
     @GetMapping
-    @Operation(summary = "Получить список всех пользователей (с пагинацией)")
+    @Operation(summary = "Get a list of all users (with pagination)")
     public Page<UserDtoOut> getAllUsers(
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         return userService.getAllUsers(pageable);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить детальную информацию о пользователе по ID")
+    @Operation(summary = "Get detailed user information by ID")
     public UserDtoOut getUserById(@PathVariable Long id) {
         return userService.getUserById(id);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Удалить пользователя из системы")
+    @Operation(summary = "Remove the user from the system")
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
     }
