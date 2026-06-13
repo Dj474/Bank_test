@@ -52,7 +52,7 @@ REST API сервис на Spring Boot, предназначенный для у
 
 1. Клонируйте репозиторий:
    ```bash
-   git clone [https://github.com/Dj474/Bank_test.git](https://github.com/Dj474/Bank_test.git)
+   git clone https://github.com/Dj474/Bank_test.git
    cd bank_rest
    ```
 2. Соберите проект и запустите инфраструктуру (БД + Сервис) одной командой:
