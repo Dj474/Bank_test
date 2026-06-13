@@ -8,7 +8,7 @@ import com.example.bankcards.entity.card.BlockRequest;
 import com.example.bankcards.entity.card.Card;
 import com.example.bankcards.entity.user.User;
 import com.example.bankcards.exception.BadRequestException;
-import com.example.bankcards.mapper.card.CardMapper;
+import com.example.bankcards.util.mapper.card.CardMapper;
 import com.example.bankcards.repository.card.BlockRequestRepository;
 import com.example.bankcards.repository.card.CardRepository;
 import com.example.bankcards.repository.user.UserRepository;

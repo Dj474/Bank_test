@@ -5,7 +5,7 @@ import com.example.bankcards.dto.user.UserDtoOut;
 import com.example.bankcards.entity.user.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
-import com.example.bankcards.mapper.user.UserMapper;
+import com.example.bankcards.util.mapper.user.UserMapper;
 import com.example.bankcards.repository.user.UserRepository;
 import com.example.bankcards.util.enums.user.Role;
 import lombok.RequiredArgsConstructor;
